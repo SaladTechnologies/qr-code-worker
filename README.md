@@ -36,3 +36,16 @@ Those without will download the models at runtime.
 | ---------- | ---------- | -------------- | ------- | --------------- |
 | `saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked` | `saladtechnologies/stable-fast-qr-code:0.4.0-baked` | `0.1.0` | `stable-fast-qr-code` | yes |
 | saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0 | `saladtechnologies/stable-fast-qr-code:0.4.0` | `0.1.0` | `stable-fast-qr-code` | no |
+
+
+## Environment Variables
+
+| Name | Description | Default |
+| ---- | ----------- | ------- |
+| QUEUE_NAME | The name of the queue to get jobs from | **REQUIRED** |
+| QUEUE_URL | The URL of the queue to get jobs from | **REQUIRED** |
+| QUEUE_API_KEY | The API key for the queue | **REQUIRED** |
+| BENCHMARK_ID | The ID of the benchmark to report results to | **REQUIRED** |
+| REPORTING_URL | The URL to report results to | **REQUIRED** |
+| REPORTING_API_KEY | The API key for the reporting endpoint | **REQUIRED** |
+| IMAGE_SIZE | The size of the qr image to generate | `512` |
