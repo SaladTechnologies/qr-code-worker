@@ -99,6 +99,16 @@ async function recordResult(params: {
 }
 
 
+async function recordStat(stat: any): Promise<void> {
+  const url = new URL("/" + BENCHMARK_ID + "-stats", REPORTING_URL);
+  await fetch(url.toString(), {
+    method: "POST",
+    body: JSON.stringify(stat),
+    headers
+  });
+}
+
+
 
 async function main(): Promise<void> {
   console.log(`Waiting for ${backend} to start...`);
@@ -107,7 +117,10 @@ async function main(): Promise<void> {
   await Promise.all([submitJob(warmupJob), fillQueue()]);
   const bootEnd = Date.now();
   console.log(`Service started in ${(bootEnd - start) / 1000} seconds`);
-
+  recordStat({
+    type: "cold-start-from-running",
+    time: (bootEnd - start) / 1000,
+  });
   while (stayAlive) {
     const job = await getJob();
     if (job) {
