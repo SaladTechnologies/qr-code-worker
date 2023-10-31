@@ -35,7 +35,7 @@ Those without will download the models at runtime.
 | Image Name | Base Image | Worker Version | Backend | Models Baked In |
 | ---------- | ---------- | -------------- | ------- | --------------- |
 | `saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked` | `saladtechnologies/stable-fast-qr-code:0.4.0-baked` | `0.1.0` | `stable-fast-qr-code` | yes |
-| saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0 | `saladtechnologies/stable-fast-qr-code:0.4.0` | `0.1.0` | `stable-fast-qr-code` | no |
+| `saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0` | `saladtechnologies/stable-fast-qr-code:0.4.0` | `0.1.0` | `stable-fast-qr-code` | no |
 
 
 ## Environment Variables
