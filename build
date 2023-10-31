@@ -1,0 +1,64 @@
+#! /usr/bin/env bash
+
+# Usage: ./build --backend <backend> --base-image <base_image>
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  key="$1"
+
+  case $key in
+  -b | --backend)
+    backend="$2"
+    shift
+    shift
+    ;;
+  -i | --base-image)
+    base_image="$2"
+    shift
+    shift
+    ;;
+  *)
+    echo "Unknown option: $key"
+    exit 1
+    ;;
+  esac
+done
+
+worker_version=$(cat package.json | jq -r .version)
+
+# Get tag from base_image
+base_image_tag=$(echo $base_image | cut -d: -f2)
+image_name=$(echo $base_image | cut -d: -f1)
+
+my_tag="$image_name:worker$worker_version-$base_image_tag"
+
+case $backend in
+"stable-fast-qr-code")
+  normal_cmd="python main.py"
+  ;;
+"a1111")
+  normal_cmd="load_models_and_start && python -u webui.py --listen --port 1234 --allow-code --xformers --enable-insecure-extension-access --api"
+  ;;
+"sdnext")
+  normal_cmd="entrypoint.sh"
+  ;;
+"comfy")
+  normal_cmd="load-models-and-start"
+  ;;
+"invoke") ;;
+*)
+  echo "Unknown backend: $backend"
+  exit 1
+  ;;
+esac
+
+echo "Building $my_tag from $base_image"
+
+docker buildx build -t $my_tag \
+  --build-arg BASE_IMAGE=$base_image \
+  --build-arg BACKEND=$backend \
+  --build-arg NORMAL_START_CMD="$normal_cmd" \
+  --platform linux/amd64 \
+  --output type=docker \
+  --provenance false \
+  .

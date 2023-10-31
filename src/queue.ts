@@ -5,7 +5,7 @@ const {
   QUEUE_URL,
   QUEUE_NAME,
   QUEUE_API_KEY,
-  QUEUE_API_KEY_HEADER,
+  QUEUE_API_KEY_HEADER = "Benchmark-Api-Key",
   EAGER_NUMBER = "2"
 } = process.env;
 

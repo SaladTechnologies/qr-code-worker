@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  qr-worker:
+    image: saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    environment:
+      QUEUE_NAME: "stable-fast-qr-baked-test"
+      BENCHMARK_ID: "stable-fast-qr-baked-test"
+      REPORTING_URL: ${REPORTING_URL}
+      REPORTING_API_KEY: ${REPORTING_API_KEY}
+      QUEUE_URL: ${QUEUE_URL}
+      QUEUE_API_KEY: ${REPORTING_API_KEY}
+      IMAGE_SIZE: 512

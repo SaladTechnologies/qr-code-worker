@@ -20,7 +20,7 @@ process.on("exit", () => {
 const {
   REPORTING_URL,
   REPORTING_API_KEY,
-  REPORTING_AUTH_HEADER,
+  REPORTING_AUTH_HEADER = "Benchmark-Api-Key",
   BENCHMARK_ID,
 } = process.env;
 

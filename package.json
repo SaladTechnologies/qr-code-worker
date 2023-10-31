@@ -1,10 +1,13 @@
 {
   "name": "qr-code-worker",
+  "bin": "./dist/index.js",
   "version": "0.1.0",
   "description": "This is a queue worker for generating stable diffusion qr codes with any of a variety of stable diffusion backends.",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/index.js"
   },
   "repository": {
     "type": "git",
