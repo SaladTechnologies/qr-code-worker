@@ -17,12 +17,12 @@ export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffe
   const body = {
     url: job.qr_params.data,
     params: job.stable_diffusion_params,
-    qr_arams: {
+    qr_params: {
       ...job.qr_params,
     },
   } as any;
 
-  delete body.qrParams.data;
+  delete body.qr_params.data;
 
   const gpuInfo = await gpu();
 
