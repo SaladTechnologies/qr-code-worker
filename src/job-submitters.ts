@@ -10,7 +10,6 @@ const gpu = async () => {
   }
   return gpuInfo;
 }
-// export async function submitA1111Job(job: QRJob): Promise<Buffer> {}
 
 export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
   const url = new URL("/generate", imageGenUrl);
@@ -53,12 +52,17 @@ export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffe
   return { images: [Buffer.from(img)], meta };
 }
 
+// export async function submitSDNextJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
+
+// }
+
 export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
   switch (backend) {
     case "stable-fast-qr-code":
       return submitStableFastQRJob(job);
-    // case "a1111":
-    //   return submitA1111Job(job);
+    // case "sdnext":
+    //   return submitSDNextJob(job);
+
     default:
       throw new Error(`Backend ${backend} is not supported`);
   }

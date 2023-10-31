@@ -49,3 +49,6 @@ Those without will download the models at runtime.
 | REPORTING_URL | The URL to report results to | **REQUIRED** |
 | REPORTING_API_KEY | The API key for the reporting endpoint | **REQUIRED** |
 | IMAGE_SIZE | The size of the qr image to generate | `512` |
+| STARTUP_CHECK_INTERVAL | The interval in ms to check for the image generation service liveness | `1000` |
+| STARTUP_CHECK_MAX_TRIES | The maximum number of times to check for the image generation service liveness | `300` |
+| EAGER_NUMBER | The number of jobs to keep locally pre-fetched | `2` |
