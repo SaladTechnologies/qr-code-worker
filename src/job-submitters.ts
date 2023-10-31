@@ -17,7 +17,7 @@ export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffe
   const body = {
     url: job.qr_params.data,
     params: job.stable_diffusion_params,
-    qrParams: {
+    qr_arams: {
       ...job.qr_params,
     },
   } as any;

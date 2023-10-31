@@ -71,7 +71,7 @@ export async function getJob(): Promise<{ messageId: string, job: QRJob } | null
 }
 
 export async function fillQueue() {
-  const jobs = await Promise.all(Array(queue.length - eagerNumber).fill(0).map(() => _getJob()));
+  const jobs = await Promise.all(Array(eagerNumber - queue.length).fill(0).map(() => _getJob()));
   jobs.forEach((job) => {
     if (job) {
       queue.push(job);
