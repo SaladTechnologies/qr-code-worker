@@ -14,6 +14,8 @@ export const backend = BACKEND as "stable-fast-qr-code" | "a1111" | "comfy" | "i
 
 export const imageGenUrl = IMAGE_GEN_URL;
 
+console.log(imageGenUrl)
+
 export const imageSize = parseInt(IMAGE_SIZE);
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

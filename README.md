@@ -5,7 +5,7 @@ Currently Supported Backends:
 - [x] [stable-fast-qr-code](https://github.com/SaladTechnologies/stable-fast-qr-demo)
 - [x] [a1111](https://github.com/SaladTechnologies/a1111-dynamic)
 - [x] [sdnext](https://github.com/SaladTechnologies/sdnext-dynamic)
-- [ ] [comfy](https://github.com/SaladTechnologies/comfyui-dynamic)
+- [x] [comfy](https://github.com/SaladTechnologies/comfyui-dynamic)
 - [ ] invoke
 
 ## Build
@@ -37,6 +37,8 @@ saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked
 | `saladtechnologies/sdnext:worker0.1.0-dynamic` | `saladtechnologies/sdnext:dynamic` | `0.1.0` | `sdnext` | no |
 | `saladtechnologies/a1111:worker0.1.0-122143-128713` | `saladtechnologies/a1111:122143-128713` | `0.1.0` | `a1111` | yes |
 | `saladtechnologies/a1111:worker0.1.0-dynamic` | `saladtechnologies/a1111:dynamic` | `0.1.0` | `a1111` | no |
+| `saladtechnologies/comfyui:worker0.1.0-baked` | `saladtechnologies/comfyui:baked` | `0.1.0` | `comfy` | yes |
+| `saladtechnologies/comfyui:worker0.1.0-dynamic` | `saladtechnologies/comfyui:dynamic` | `0.1.0` | `comfy` | no |
 
 
 ## Environment Variables

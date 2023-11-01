@@ -111,6 +111,30 @@ async function waitForA1111ToStart(): Promise<void> {
   throw new Error(`A1111 did not start after ${(startupCheckInterval / 1000) * startupCheckMaxTries} seconds`);
 }
 
+async function pingComfyUI(): Promise<void> {
+  const res = await fetch(imageGenUrl);
+  if (!res.ok) {
+    throw new Error(`Failed to ping Comfy UI: ${await res.text()}`);
+  }
+}
+
+async function waitForComfyUIToStart(): Promise<void> {
+  let retries = 0;
+  while (retries < startupCheckMaxTries) {
+    try {
+      await pingComfyUI();
+      console.log("Comfy UI started");
+      return;
+    } catch (e) {
+      // Ignore
+    }
+    retries++;
+    await sleep(startupCheckInterval);
+  }
+
+  throw new Error(`Comfy UI did not start after ${(startupCheckInterval / 1000) * startupCheckMaxTries} seconds`);
+}
+
 
 export async function waitForServiceToStart() {
   switch (backend) {
@@ -120,6 +144,8 @@ export async function waitForServiceToStart() {
       return waitForSDNextToStart();
     case "a1111":
       return waitForA1111ToStart();
+    case "comfy":
+      return waitForComfyUIToStart();
     default:
       throw new Error(`Unknown backend: ${backend}`);
   }

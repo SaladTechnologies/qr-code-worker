@@ -2,8 +2,12 @@ import { Text2ImageRequest, Text2ImageResponse, QRJob, GenerationMeta } from "./
 import { getGPUInfo } from "./system-specs";
 import { generateQRCode } from "./qr";
 import { imageSize } from "./common";
-
 import { backend, imageGenUrl } from "./common";
+import comfyWorkflow from "./comfy-workflow.json";
+import { randomUUID } from "crypto";
+import fs from "fs";
+import path from "path";
+import { Blob } from "buffer";
 
 let gpuInfo: { name: string, vram: number } | null = null;
 const gpu = async () => {
@@ -124,6 +128,98 @@ export async function submitA1111Job(job: QRJob): Promise<{ images: Buffer[], me
   return { images, meta };
 }
 
+function waitForFirstFile(directory: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    // Watch the directory for added files
+    const watcher = fs.watch(directory, (eventType, filename) => {
+      if (eventType === 'rename' && filename) {
+        // 'rename' event can mean added or deleted; check file existence
+        const filePath = path.join(directory, filename);
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+          if (!err) {
+            watcher.close(); // Stop watching the directory
+            // Load the file as a buffer and resolve promise
+            fs.readFile(filePath, (err, data) => {
+              if (err) {
+                return reject(err);
+              }
+              resolve(data);
+            });
+
+          }
+        });
+      }
+    });
+
+    // Handle watcher errors
+    watcher.on('error', (err) => {
+      reject(err);
+      watcher.close();
+    });
+  });
+}
+
+async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
+  const submitURL = new URL("/prompt", imageGenUrl);
+  const start = Date.now();
+  const qrCode = await generateQRCode(job.qr_params);
+  const qrBlob = new Blob([qrCode], { type: "image/png"});
+  const imageId = randomUUID();
+
+  // Upload the image to /upload/image/ as a form upload, where the image is "image"
+  const uploadURL = new URL("/upload/image", imageGenUrl);
+  const formData = new FormData();
+  formData.append("image", qrBlob as any, `${imageId}.png`);
+  const uploadRes = await fetch(uploadURL.toString(), {
+    method: "POST",
+    body: formData,
+    // headers: {
+    //   "Content-Type": "multipart/form-data",
+    // }
+  });
+  if (!uploadRes.ok) {
+    throw new Error(`Failed to upload image: ${await uploadRes.text()}`);
+  }
+  const { name } = await uploadRes.json();
+  const qrGenTime = Date.now() - start;
+
+  const gpu = await getGPUInfo();
+
+  const prompt = {...comfyWorkflow };
+  prompt["3"].inputs.steps = job.stable_diffusion_params.num_inference_steps;
+  prompt["3"].inputs.cfg = job.stable_diffusion_params.guidance_scale;
+  prompt["5"].inputs.width = imageSize;
+  prompt["5"].inputs.height = imageSize;
+  prompt["6"].inputs.text = job.stable_diffusion_params.prompt;
+  prompt["7"].inputs.text = job.stable_diffusion_params.negative_prompt;
+  prompt["12"].inputs.strength = job.stable_diffusion_params.controlnet_conditioning_scale;
+  prompt["12"].inputs.start_percent = job.stable_diffusion_params.control_guidance_start;
+  prompt["12"].inputs.end_percent = job.stable_diffusion_params.control_guidance_end;
+  prompt["14"].inputs.image = name;
+
+  const genStart = Date.now();
+  const res = await fetch(submitURL.toString(), {
+    method: "POST",
+    body: JSON.stringify({ prompt }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const image = await waitForFirstFile("/opt/ComfyUI/output");
+  const end = Date.now();
+
+  const meta = {
+    qrGenTime: qrGenTime / 1000,
+    imageGenTime: (end - genStart) / 1000,
+    gpu: gpu.name,
+    vram: gpu.vram,
+    totalTime: (end - start) / 1000,
+  };
+
+  return { images: [image], meta };
+}
+
 export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
   switch (backend) {
     case "stable-fast-qr-code":
@@ -132,6 +228,8 @@ export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: G
       return submitA1111Job(job);
     case "a1111":
       return submitA1111Job(job);
+    case "comfy":
+      return submitComfyUIJob(job);
 
     default:
       throw new Error(`Backend ${backend} is not supported`);

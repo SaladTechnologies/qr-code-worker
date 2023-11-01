@@ -32,7 +32,8 @@ COPY --from=build /app/bin /app/bin
 
 
 ENV HOST="127.0.0.1"
-ENV PORT=1234
+ENV PORT=8188
+ENV WEB_ENABLE_AUTH=false
 ENV IMAGE_GEN_URL="http://${HOST}:${PORT}/"
 
 ARG NORMAL_START_CMD

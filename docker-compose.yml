@@ -2,7 +2,7 @@ version: '3'
 
 services:
   qr-worker:
-    image: saladtechnologies/a1111:worker0.1.0-122143-128713
+    image: saladtechnologies/comfyui:worker0.1.0-baked
     deploy:
       resources:
         reservations:
