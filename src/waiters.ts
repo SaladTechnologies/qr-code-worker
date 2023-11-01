@@ -57,6 +57,7 @@ export async function waitForSDNextToStart(): Promise<void> {
   while (retries < startupCheckMaxTries) {
     try {
       await getSDNextServerStatus();
+      console.log("SDNext server started")
       break;
     } catch (e) {
       // Ignore
@@ -72,6 +73,7 @@ export async function waitForSDNextToStart(): Promise<void> {
     try {
       const logs = await getSDNextLogs();
       if (logs.some((line) => line.includes("Startup time:"))) {
+        console.log("SDNext model loaded");
         return;
       }
     } catch (e) {
@@ -84,6 +86,31 @@ export async function waitForSDNextToStart(): Promise<void> {
   throw new Error(`SDNext did not start after ${(startupCheckInterval / 1000) * startupCheckMaxTries} seconds`);
 }
 
+async function pingA1111(): Promise<void> {
+  const url = new URL("/internal/ping", imageGenUrl);
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    throw new Error(`Failed to ping A1111: ${await res.text()}`);
+  }
+}
+
+async function waitForA1111ToStart(): Promise<void> {
+  let retries = 0;
+  while (retries < startupCheckMaxTries) {
+    try {
+      await pingA1111();
+      console.log("A1111 started");
+      return;
+    } catch (e) {
+      // Ignore
+    }
+    retries++;
+    await sleep(startupCheckInterval);
+  }
+
+  throw new Error(`A1111 did not start after ${(startupCheckInterval / 1000) * startupCheckMaxTries} seconds`);
+}
+
 
 export async function waitForServiceToStart() {
   switch (backend) {
@@ -91,6 +118,8 @@ export async function waitForServiceToStart() {
       return waitForStableFastQRCodeToStart();
     case "sdnext":
       return waitForSDNextToStart();
+    case "a1111":
+      return waitForA1111ToStart();
     default:
       throw new Error(`Unknown backend: ${backend}`);
   }

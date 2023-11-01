@@ -130,6 +130,8 @@ export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: G
       return submitStableFastQRJob(job);
     case "sdnext":
       return submitA1111Job(job);
+    case "a1111":
+      return submitA1111Job(job);
 
     default:
       throw new Error(`Backend ${backend} is not supported`);

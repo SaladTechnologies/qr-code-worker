@@ -2,7 +2,7 @@ version: '3'
 
 services:
   qr-worker:
-    image: saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked
+    image: saladtechnologies/a1111:worker0.1.0-122143-128713
     deploy:
       resources:
         reservations:

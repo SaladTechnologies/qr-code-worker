@@ -37,13 +37,13 @@ case $backend in
   normal_cmd="python main.py"
   ;;
 "a1111")
-  normal_cmd="load_models_and_start && python -u webui.py --listen --port 1234 --allow-code --xformers --enable-insecure-extension-access --api"
+  normal_cmd="./load_models_and_start python -u webui.py --listen --port 1234 --allow-code --xformers --enable-insecure-extension-access --api"
   ;;
 "sdnext")
   normal_cmd="./entrypoint"
   ;;
 "comfy")
-  normal_cmd="load-models-and-start"
+  normal_cmd="./load-models-and-start"
   ;;
 "invoke") ;;
 *)
