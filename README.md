@@ -33,6 +33,8 @@ saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked
 | ---------- | ---------- | -------------- | ------- | --------------- |
 | `saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked` | `saladtechnologies/stable-fast-qr-code:0.4.0-baked` | `0.1.0` | `stable-fast-qr-code` | yes |
 | `saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0` | `saladtechnologies/stable-fast-qr-code:0.4.0` | `0.1.0` | `stable-fast-qr-code` | no |
+| `saladtechnologies/sdnext:worker0.1.0-122143-128713` | `saladtechnologies/sdnext:122143-128713` | `0.1.0` | `sdnext` | yes |
+| `saladtechnologies/sdnext:worker0.1.0-dynamic` | `saladtechnologies/sdnext:dynamic` | `0.1.0` | `sdnext` | no |
 
 
 ## Environment Variables
