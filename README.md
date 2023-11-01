@@ -52,4 +52,4 @@ saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked
 | IMAGE_SIZE | The size of the qr image to generate | `512` |
 | STARTUP_CHECK_INTERVAL | The interval in ms to check for the image generation service liveness | `1000` |
 | STARTUP_CHECK_MAX_TRIES | The maximum number of times to check for the image generation service liveness | `300` |
-| EAGER_NUMBER | The number of jobs to keep locally pre-fetched | `2` |
+| EAGER_NUMBER | This queue worker uses eager fetching. This is the number of jobs to keep locally pre-fetched | `2` |
