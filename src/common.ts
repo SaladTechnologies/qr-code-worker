@@ -1,6 +1,6 @@
 import assert from "assert";
 
-const { IMAGE_GEN_URL, BACKEND } = process.env;
+const { IMAGE_GEN_URL, BACKEND, IMAGE_SIZE = "512" } = process.env;
 
 assert(IMAGE_GEN_URL, "IMAGE_GEN_URL is not defined");
 assert(BACKEND, "BACKEND is not defined");
@@ -14,6 +14,7 @@ export const backend = BACKEND as "stable-fast-qr-code" | "a1111" | "comfy" | "i
 
 export const imageGenUrl = IMAGE_GEN_URL;
 
+export const imageSize = parseInt(IMAGE_SIZE);
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**

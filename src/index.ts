@@ -1,6 +1,8 @@
+(global as any).self = global;
+
 import { waitForServiceToStart } from "./waiters";
 import { submitJob } from "./job-submitters";
-import { backend, sleep } from "./common";
+import { backend, sleep, imageSize } from "./common";
 import { fillQueue, getJob, markJobComplete} from "./queue";
 import { GenerationMeta, QRJob } from "./types";
 import assert from "assert";
@@ -49,6 +51,7 @@ const warmupJob: QRJob = {
     error_correction: "M",
   }, 
   stable_diffusion_params: {
+    controlnet_conditioning_scale: 2,
     control_guidance_end: 1,
     control_guidance_start: 0,
     guidance_scale: 4,
@@ -93,7 +96,7 @@ async function recordResult(params: {
   const url = new URL("/" + BENCHMARK_ID, REPORTING_URL);
   await fetch(url.toString(), {
     method: "POST",
-    body: JSON.stringify(params),
+    body: JSON.stringify({...params, imageSize, backend}),
     headers
   });
 }

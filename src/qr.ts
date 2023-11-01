@@ -1,10 +1,7 @@
 import QRCodeStyling, { Canvas, DotType } from "qr-code-styling-node";
 import nodeCanvas from "canvas";
 import { QRParams } from "./types";
-
-const { IMAGE_SIZE = "512" } = process.env;
-
-const imageSize = parseInt(IMAGE_SIZE);
+import { imageSize } from "./common";
 
 export function rgbToHex(rgb: number[]) {
   return "#" + rgb.map(x => x.toString(16).padStart(2, "0")).join("");

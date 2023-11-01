@@ -1,0 +1,21 @@
+#! /usr/bin/env bash
+
+# echo our linux distro
+linux_codename=$(
+  grep VERSION_CODENAME /etc/os-release | cut -d'=' -f2
+)
+
+if [ "$linux_codename" = "focal" ]; then
+  add-apt-repository main
+  add-apt-repository universe
+  apt update
+  apt-get install -y build-essential libcairo2-dev libpango1.0-dev libgif-dev
+  wget http://ftp.us.debian.org/debian/pool/main/libj/libjpeg-turbo/libjpeg62-turbo_2.1.5-2_amd64.deb
+  dpkg -i libjpeg62-turbo_2.1.5-2_amd64.deb
+elif [ "$linux_codename" = "bullseye" ]; then
+  apt update
+  apt-get install -y libcairo2-dev libpango1.0-dev libgif-dev librsvg2-dev
+else
+  echo "Unknown linux distro: $linux_codename"
+  exit 1
+fi

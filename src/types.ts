@@ -53,6 +53,17 @@ export interface Text2ImageRequest {
   send_images: boolean;
   save_images?: boolean;
   alwayson_scripts?: AlwaysonScripts;
+  control_units: ControlUnit[];
+}
+
+export interface ControlUnit {
+  model: string;
+  weight: number;
+  input_image: string;
+  guidance_start: number;
+  guidance_end: number;
+  resize_mode: 0 | 1 | 2 | "Just Resize" | "Scale to Fit (Inner Fit)" | "Envelope (Outer Fit)"
+  control_mode: 0 | 1 | 2 | "Balanced" | "My prompt is more important" | "ControlNet is more important"
 }
 
 export interface OverrideSettings {}
@@ -201,6 +212,7 @@ export type StableDiffusionParams = {
   num_inference_steps: number;
   control_guidance_start: number;
   control_guidance_end: number;
+  controlnet_conditioning_scale: number;
 }
 
 export type SolidFillParams = {

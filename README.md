@@ -27,9 +27,6 @@ For example, if you build worker v0.1.0 (per `package.json`) on top of `saladtec
 saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked
 ```
 
-Image tags that end in `-baked` have the models baked into the image.
-Those without will download the models at runtime.
-
 ### Current Images
 
 | Image Name | Base Image | Worker Version | Backend | Models Baked In |
