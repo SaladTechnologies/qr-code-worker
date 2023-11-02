@@ -27,6 +27,12 @@ For example, if you build worker v0.1.0 (per `package.json`) on top of `saladtec
 saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked
 ```
 
+Images with models included are using:
+- Checkpoint: [Dreamshaper 8](https://civitai.com/models/4384?modelVersionId=128713)
+- Controlnet: [QR Code Monster v2.0](https://civitai.com/models/111006?modelVersionId=122143)
+
+You should be able to use any stable diffusion 1.5 checkpoint, and any text2img QR code controlnet. Each backend supports dynamically loading models from civitai via environment variables, though the syntax may vary. Please refer to the documentation for each backend, linked above.
+
 ### Current Images
 
 | Image Name | Base Image | Worker Version | Backend | Models Baked In |
