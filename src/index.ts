@@ -3,7 +3,7 @@
 import { waitForServiceToStart } from "./waiters";
 import { submitJob } from "./job-submitters";
 import { backend, sleep, imageSize } from "./common";
-import { fillQueue, getJob, markJobComplete} from "./queue";
+import { fillQueue, getJob, markJobComplete } from "./queue";
 import { GenerationMeta, QRJob } from "./types";
 import assert from "assert";
 
@@ -24,6 +24,7 @@ const {
   REPORTING_API_KEY,
   REPORTING_AUTH_HEADER = "Benchmark-Api-Key",
   BENCHMARK_ID,
+  SALAD_MACHINE_ID
 } = process.env;
 
 assert(REPORTING_URL, "REPORTING_URL is not defined");
@@ -49,7 +50,7 @@ const warmupJob: QRJob = {
     data: "warmup job",
     drawer: "RoundedModule",
     error_correction: "M",
-  }, 
+  },
   stable_diffusion_params: {
     controlnet_conditioning_scale: 2,
     control_guidance_end: 1,
@@ -89,14 +90,14 @@ async function uploadImage(image: Buffer, url: string): Promise<string> {
  * In this case, we're sending the results to our reporting server.
  */
 async function recordResult(params: {
-  job: QRJob, 
+  job: QRJob,
   downloadUrls: string[],
   meta: GenerationMeta
 }): Promise<void> {
   const url = new URL("/" + BENCHMARK_ID, REPORTING_URL);
   await fetch(url.toString(), {
     method: "POST",
-    body: JSON.stringify({...params, imageSize, backend}),
+    body: JSON.stringify({ ...params, imageSize, backend, saladMachineId: SALAD_MACHINE_ID }),
     headers
   });
 }
@@ -123,6 +124,8 @@ async function main(): Promise<void> {
   recordStat({
     type: "cold-start-from-running",
     time: (bootEnd - start) / 1000,
+    backend,
+    saladMachineId: SALAD_MACHINE_ID,
   });
   while (stayAlive) {
     const job = await getJob();
