@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Function to build Docker images
 build_image() {
   backend=$1
