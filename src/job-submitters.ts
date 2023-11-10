@@ -8,6 +8,9 @@ import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 import { Blob } from "buffer";
+import { promisify } from "util";
+
+const readFile = promisify(fs.readFile);
 
 let gpuInfo: { name: string, vram: number } | null = null;
 const gpu = async () => {
@@ -17,7 +20,7 @@ const gpu = async () => {
   return gpuInfo;
 }
 
-export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
+export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta }> {
   const url = new URL("/generate", imageGenUrl);
   const body = {
     url: job.qr_params.data,
@@ -25,6 +28,8 @@ export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffe
     qr_params: {
       ...job.qr_params,
     },
+    batch_size: job.batch_size,
+    safety_checker: false
   } as any;
 
   delete body.qr_params.data;
@@ -44,7 +49,16 @@ export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffe
     throw new Error(`Failed to generate QR code: ${await res.text()}`);
   }
 
-  const img = await res.arrayBuffer();
+  const images: Buffer[] = []
+  if (job.batch_size === 1) {
+    images[0] = Buffer.from(await res.arrayBuffer());
+  } else {
+    const json = await res.json();
+    for (const image of json.images) {
+      images.push(Buffer.from(image, "base64"));
+    }
+  }
+
   const end = Date.now();
 
   const meta = {
@@ -55,7 +69,7 @@ export async function submitStableFastQRJob(job: QRJob): Promise<{ images: Buffe
     totalTime: (end - start) / 1000,
   };
 
-  return { images: [Buffer.from(img)], meta };
+  return { images, meta };
 }
 
 
@@ -70,7 +84,7 @@ const getControlModel = async () => {
   return controlModel;
 }
 
-export async function submitA1111Job(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
+export async function submitA1111Job(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta }> {
   const url = new URL("/sdapi/v1/txt2img", imageGenUrl);
   const start = Date.now();
   const qrCode = (await generateQRCode(job.qr_params)).toString("base64");
@@ -82,6 +96,7 @@ export async function submitA1111Job(job: QRJob): Promise<{ images: Buffer[], me
     width: imageSize,
     height: imageSize,
     steps: job.stable_diffusion_params.num_inference_steps,
+    sampler_name: "Euler a",
     save_images: false,
     send_images: true,
     batch_size: job.batch_size,
@@ -128,42 +143,44 @@ export async function submitA1111Job(job: QRJob): Promise<{ images: Buffer[], me
   return { images, meta };
 }
 
-function waitForFirstFile(directory: string): Promise<Buffer> {
+function waitForFiles(directory: string, batchSize: number = 1): Promise<Buffer[]> {
   return new Promise((resolve, reject) => {
-    // Watch the directory for added files
-    const watcher = fs.watch(directory, (eventType, filename) => {
-      if (eventType === 'rename' && filename) {
-        // 'rename' event can mean added or deleted; check file existence
-        const filePath = path.join(directory, filename);
-        fs.access(filePath, fs.constants.F_OK, (err) => {
-          if (!err) {
-            watcher.close(); // Stop watching the directory
-            // Load the file as a buffer and resolve promise
-            fs.readFile(filePath, (err, data) => {
-              if (err) {
-                return reject(err);
-              }
-              resolve(data);
-            });
+    const buffers: Buffer[] = [];
+    const watchedFiles = new Set();
 
+    const watcher = fs.watch(directory, async (eventType, filename) => {
+      if (eventType === 'rename' && !watchedFiles.has(filename)) {
+        try {
+          const filePath = `${directory}/${filename}`;
+          // Check if the file exists and is not a directory
+          if (fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory()) {
+            watchedFiles.add(filename);
+            const data = await readFile(filePath);
+            buffers.push(data);
+            if (buffers.length === batchSize) {
+              watcher.close();
+              resolve(buffers);
+            }
           }
-        });
+        } catch (error) {
+          watcher.close();
+          reject(error);
+        }
       }
     });
 
-    // Handle watcher errors
-    watcher.on('error', (err) => {
-      reject(err);
+    watcher.on('error', error => {
       watcher.close();
+      reject(error);
     });
   });
 }
 
-async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
+async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta }> {
   const submitURL = new URL("/prompt", imageGenUrl);
   const start = Date.now();
   const qrCode = await generateQRCode(job.qr_params);
-  const qrBlob = new Blob([qrCode], { type: "image/png"});
+  const qrBlob = new Blob([qrCode], { type: "image/png" });
   const imageId = randomUUID();
 
   // Upload the image to /upload/image/ as a form upload, where the image is "image"
@@ -185,11 +202,12 @@ async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: G
 
   const gpu = await getGPUInfo();
 
-  const prompt = {...comfyWorkflow };
+  const prompt = { ...comfyWorkflow };
   prompt["3"].inputs.steps = job.stable_diffusion_params.num_inference_steps;
   prompt["3"].inputs.cfg = job.stable_diffusion_params.guidance_scale;
   prompt["5"].inputs.width = imageSize;
   prompt["5"].inputs.height = imageSize;
+  prompt["5"].inputs.batch_size = job.batch_size;
   prompt["6"].inputs.text = job.stable_diffusion_params.prompt;
   prompt["7"].inputs.text = job.stable_diffusion_params.negative_prompt;
   prompt["12"].inputs.strength = job.stable_diffusion_params.controlnet_conditioning_scale;
@@ -206,7 +224,7 @@ async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: G
     },
   });
 
-  const image = await waitForFirstFile("/opt/ComfyUI/output");
+  const images = await waitForFiles("/opt/ComfyUI/output", job.batch_size);
   const end = Date.now();
 
   const meta = {
@@ -217,10 +235,10 @@ async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: G
     totalTime: (end - start) / 1000,
   };
 
-  return { images: [image], meta };
+  return { images, meta };
 }
 
-export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta}> {
+export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta }> {
   switch (backend) {
     case "stable-fast-qr-code":
       return submitStableFastQRJob(job);

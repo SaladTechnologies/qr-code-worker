@@ -18,8 +18,8 @@ push_image() {
 }
 
 # Build images
-build_image "stable-fast-qr-code" "saladtechnologies/stable-fast-qr-code:0.4.0-baked"
-build_image "stable-fast-qr-code" "saladtechnologies/stable-fast-qr-code:0.4.0"
+build_image "stable-fast-qr-code" "saladtechnologies/stable-fast-qr-code:0.5.0-baked"
+build_image "stable-fast-qr-code" "saladtechnologies/stable-fast-qr-code:0.5.0"
 build_image "sdnext" "saladtechnologies/sdnext:122143-128713"
 build_image "sdnext" "saladtechnologies/sdnext:dynamic"
 build_image "a1111" "saladtechnologies/a1111:122143-128713"
@@ -28,8 +28,8 @@ build_image "comfy" "saladtechnologies/comfyui:baked"
 build_image "comfy" "saladtechnologies/comfyui:dynamic"
 
 # Push images
-push_image "saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0-baked"
-push_image "saladtechnologies/stable-fast-qr-code:worker0.1.0-0.4.0"
+push_image "saladtechnologies/stable-fast-qr-code:worker0.1.0-0.5.0-baked"
+push_image "saladtechnologies/stable-fast-qr-code:worker0.1.0-0.5.0"
 push_image "saladtechnologies/sdnext:worker0.1.0-122143-128713"
 push_image "saladtechnologies/sdnext:worker0.1.0-dynamic"
 push_image "saladtechnologies/a1111:worker0.1.0-122143-128713"
