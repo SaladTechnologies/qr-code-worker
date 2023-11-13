@@ -24,7 +24,8 @@ const {
   REPORTING_API_KEY,
   REPORTING_AUTH_HEADER = "Benchmark-Api-Key",
   BENCHMARK_ID,
-  SALAD_MACHINE_ID
+  SALAD_MACHINE_ID,
+  PUBLIC_DOWNLOAD_URL = "https://salad-benchmark-assets.download"
 } = process.env;
 
 assert(REPORTING_URL, "REPORTING_URL is not defined");
@@ -62,24 +63,67 @@ const warmupJob: QRJob = {
   },
 };
 
+function replaceHostAndRemoveFirstPathSegment(originalUrl: string, newHost: string): string {
+  // Parse the original URL
+  const url = new URL(originalUrl);
+
+  // Parse the new host URL
+  const newHostUrl = new URL(newHost);
+
+  // Replace the relevant parts
+  url.protocol = newHostUrl.protocol;
+  url.hostname = newHostUrl.hostname;
+  url.port = newHostUrl.port; // You can omit this if the port isn't changing
+
+  // Remove the first segment of the path
+  const pathSegments = url.pathname.split('/').filter(Boolean);
+  pathSegments.shift(); // Removes the first segment
+  url.pathname = '/' + pathSegments.join('/');
+
+  // Return the modified URL as a string
+  return url.toString();
+}
+
+function getFileExtension(url: string): string {
+  // Split the URL to separate the base URL from query parameters
+  const baseUrl = url.split('?')[0];
+
+  // Split the base URL by '/' and get the last segment (filename)
+  const segments = baseUrl.split('/');
+  const filename = segments[segments.length - 1];
+
+  // Split the filename by '.' and get the last segment (extension)
+  const extension = filename.split('.').pop();
+
+  return extension || '';
+}
+
 /**
  * Uploads an image to s3 using the signed url provided by the job
- * @param image The image to upload, base64 encoded
+ * @param image The image to upload as a buffer
  * @param url The signed url to upload the image to
  * 
  * @returns The download url of the uploaded image
  */
 async function uploadImage(image: Buffer, url: string): Promise<string> {
-  await fetch(url, {
+  // url is an s3 signed url, so we can just PUT the image to it
+  const ext = getFileExtension(url);
+  const contentType = ext === "jpg" ? "image/jpeg" : "image/png";
+  const res = await fetch(url, {
     method: "PUT",
     body: image,
     headers: {
-      "Content-Type": "image/jpeg",
+      "Content-Type": contentType,
     },
   });
 
+  if (!res.ok) {
+    throw new Error(`Failed to upload image: ${res.status} ${res.statusText}`);
+  }
+
   // Return the full url, minus the query string
-  return url.split("?")[0];
+  const privateDownloadURL = url.split("?")[0];
+  return replaceHostAndRemoveFirstPathSegment(privateDownloadURL, PUBLIC_DOWNLOAD_URL);
 }
 
 /**
@@ -118,7 +162,7 @@ async function main(): Promise<void> {
   console.log(`Waiting for ${backend} to start...`);
   const start = Date.now();
   await waitForServiceToStart();
-  await Promise.all([submitJob(warmupJob), fillQueue()]);
+  await Promise.all([submitJob(warmupJob, 30), fillQueue()]);
   const bootEnd = Date.now();
   console.log(`Service started in ${(bootEnd - start) / 1000} seconds`);
   recordStat({
@@ -131,7 +175,7 @@ async function main(): Promise<void> {
     const job = await getJob();
     if (job) {
       const { images, meta } = await submitJob(job.job);
-      console.log(`Job ${job.job.id} completed in ${meta.totalTime} seconds`);
+      console.log(`Job ${job.job.id} with ${job.job.batch_size} images completed in ${meta.totalTime} seconds`);
       Promise.all(job.job.upload_url.map((url, i) => uploadImage(images[i], url))).then(async (urls) => {
         await recordResult({
           job: job.job,

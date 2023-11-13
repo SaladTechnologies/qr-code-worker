@@ -91,7 +91,7 @@ export async function submitA1111Job(job: QRJob): Promise<{ images: Buffer[], me
   const qrGenTime = Date.now() - start;
   const body = {
     prompt: job.stable_diffusion_params.prompt,
-    negative_prompt: job.stable_diffusion_params.negative_prompt,
+    negative_prompt: job.stable_diffusion_params.negative_prompt || "",
     cfg_scale: job.stable_diffusion_params.guidance_scale,
     width: imageSize,
     height: imageSize,
@@ -143,31 +143,43 @@ export async function submitA1111Job(job: QRJob): Promise<{ images: Buffer[], me
   return { images, meta };
 }
 
-function waitForFiles(directory: string, batchSize: number = 1): Promise<Buffer[]> {
+function waitForFiles(directory: string, batchSize: number = 1, timeout: number = 10000): Promise<Buffer[]> {
   return new Promise((resolve, reject) => {
     const buffers: Buffer[] = [];
-    const watchedFiles = new Set();
+    const watchedFiles = new Map<string, NodeJS.Timeout>();
+    const watcher = fs.watch(directory);
 
-    const watcher = fs.watch(directory, async (eventType, filename) => {
-      if (eventType === 'rename' && !watchedFiles.has(filename)) {
-        try {
-          const filePath = `${directory}/${filename}`;
-          // Check if the file exists and is not a directory
-          if (fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory()) {
-            watchedFiles.add(filename);
-            const data = await readFile(filePath);
-            buffers.push(data);
-            if (buffers.length === batchSize) {
-              watcher.close();
-              resolve(buffers);
-            }
-          }
-        } catch (error) {
-          watcher.close();
-          reject(error);
+    watcher.on('change', async (eventType, filename) => {
+      if (eventType === 'rename' && filename && !watchedFiles.has(filename.toString())) {
+        const filePath = `${directory}/${filename}`;
+        
+        // Debounce mechanism
+        if (watchedFiles.has(filename.toString())) {
+          clearTimeout(watchedFiles.get(filename.toString()));
         }
+
+        watchedFiles.set(filename.toString(), setTimeout(async () => {
+          try {
+            if (fs.existsSync(filePath) && !fs.lstatSync(filePath).isDirectory()) {
+              const data = await readFile(filePath);
+              buffers.push(data);
+              if (buffers.length === batchSize) {
+                watcher.close();
+                resolve(buffers);
+              }
+            }
+          } catch (error) {
+            watcher.close();
+            reject(error);
+          }
+        }, 250)); // Adjust the debounce delay as necessary
       }
     });
+
+    setTimeout(() => {
+      watcher.close();
+      reject(new Error(`Timed out (${timeout} ms) waiting for ${batchSize} files in ${directory}`));
+    }, timeout);
 
     watcher.on('error', error => {
       watcher.close();
@@ -176,7 +188,7 @@ function waitForFiles(directory: string, batchSize: number = 1): Promise<Buffer[
   });
 }
 
-async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta }> {
+async function submitComfyUIJob(job: QRJob, timeout: number = 7): Promise<{ images: Buffer[], meta: GenerationMeta }> {
   const submitURL = new URL("/prompt", imageGenUrl);
   const start = Date.now();
   const qrCode = await generateQRCode(job.qr_params);
@@ -209,7 +221,7 @@ async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: G
   prompt["5"].inputs.height = imageSize;
   prompt["5"].inputs.batch_size = job.batch_size;
   prompt["6"].inputs.text = job.stable_diffusion_params.prompt;
-  prompt["7"].inputs.text = job.stable_diffusion_params.negative_prompt;
+  prompt["7"].inputs.text = job.stable_diffusion_params.negative_prompt || "";
   prompt["12"].inputs.strength = job.stable_diffusion_params.controlnet_conditioning_scale;
   prompt["12"].inputs.start_percent = job.stable_diffusion_params.control_guidance_start;
   prompt["12"].inputs.end_percent = job.stable_diffusion_params.control_guidance_end;
@@ -224,7 +236,13 @@ async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: G
     },
   });
 
-  const images = await waitForFiles("/opt/ComfyUI/output", job.batch_size);
+  if (!res.ok) {
+    throw new Error(`Failed to generate QR Image: ${await res.text()}`);
+  }
+
+  const expectedTime = Math.max((job.stable_diffusion_params.num_inference_steps * job.batch_size) / 4, timeout);
+
+  const images = await waitForFiles("/opt/ComfyUI/output", job.batch_size, expectedTime * 1000);
   const end = Date.now();
 
   const meta = {
@@ -238,7 +256,7 @@ async function submitComfyUIJob(job: QRJob): Promise<{ images: Buffer[], meta: G
   return { images, meta };
 }
 
-export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: GenerationMeta }> {
+export async function submitJob(job: QRJob, timeout: number = 7): Promise<{ images: Buffer[], meta: GenerationMeta }> {
   switch (backend) {
     case "stable-fast-qr-code":
       return submitStableFastQRJob(job);
@@ -247,7 +265,7 @@ export async function submitJob(job: QRJob): Promise<{ images: Buffer[], meta: G
     case "a1111":
       return submitA1111Job(job);
     case "comfy":
-      return submitComfyUIJob(job);
+      return submitComfyUIJob(job, timeout);
 
     default:
       throw new Error(`Backend ${backend} is not supported`);
